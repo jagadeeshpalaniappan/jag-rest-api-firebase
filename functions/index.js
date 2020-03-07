@@ -2,97 +2,53 @@
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const firebaseHelper = require("firebase-functions-helper/dist");
 const express = require("express");
 const bodyParser = require("body-parser");
+var cors = require('cors');
 
+
+// DB:INIT
 admin.initializeApp(functions.config().firebase);
 const db = admin.firestore();
-const contactsCollection = "contacts";
 
 
 const app = express();
-
+app.use(express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
+app.use(cors());
+app.options('*', cors());
 
-app.get("/", (req, res) => {
-    res.send("Hello World");
-});
+// Add headers
+// app.use(function(req, res, next) {
+//     res.header('Access-Control-Allow-Origin', '*');
+//     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+//     res.header('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE');
+//
+//     // Pass to next layer of middleware
+//     next();
+// });
 
-const api = express();
-app.use("/api/v1", api);
 
-api.get("/", (req, res) => {
-    res.send("Welcome to JAG REST API..");
-});
+// ROUTE:INIT
 
-// Add new contact
-api.post("/contacts", async (req, res) => {
-    console.log('post:contacts');
-    try {
-        const contact = {
-            firstName: req.body["firstName"],
-            lastName: req.body["lastName"],
-            email: req.body["email"]
-        };
-        const newDoc = await firebaseHelper.firestore.createNewDocument(
-            db,
-            contactsCollection,
-            contact
-        );
+const contacts = require('./contacts')(db);
 
-        console.log('success: post:contacts');
-        res.status(201).send(`Created a new contact: ${newDoc.id}`);
-    } catch (error) {
-        console.log('err: post:contacts');
-        res
-            .status(400)
-            .send(`Contact should only contains firstName, lastName and email!!!`);
-    }
-});
-// Update new contact
-api.patch("/contacts/:contactId", async (req, res) => {
-    const updatedDoc = await firebaseHelper.firestore.updateDocument(
-        db,
-        contactsCollection,
-        req.params.contactId,
-        req.body
-    );
-    res.status(204).send(`Update a new contact: ${updatedDoc}`);
-});
-// View a contact
-api.get("/contacts/:contactId", (req, res) => {
-    firebaseHelper.firestore
-        .getDocument(db, contactsCollection, req.params.contactId)
-        .then(doc => res.status(200).send(doc))
-        .catch(error => res.status(400).send(`Cannot get contact: ${error}`));
-});
-// View all contacts
-api.get("/contacts", (req, res) => {
-    firebaseHelper.firestore
-        .backup(db, contactsCollection)
-        .then(data => res.status(200).send(data))
-        .catch(error => res.status(400).send(`Cannot get contacts: ${error}`));
-});
+const contactsRouter = express.Router();
+contactsRouter.options('*', cors());
+contactsRouter.get("/contacts", contacts.getAll);   // View all contacts
+contactsRouter.get("/contacts/:id", contacts.get); // View a contact
+contactsRouter.post("/contacts", contacts.create);  // Add new contact
+contactsRouter.patch("/contacts/:id", contacts.update);  // Update existing contact
+contactsRouter.delete("/contacts/:id", contacts.remove);   // Delete a contact
+app.use("/api/v1", contactsRouter);
 
-// Delete a contact
-api.delete("/contacts/:contactId", async (req, res) => {
-    const deletedContact = await firebaseHelper.firestore.deleteDocument(
-        db,
-        contactsCollection,
-        req.params.contactId
-    );
-    res.status(204).send(`Contact is deleted: ${deletedContact}`);
-});
+
 
 
 exports.webApi = functions.https.onRequest(app);
 
-
 // app.listen(8080, () => { console.log("Server started"); });
-
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
