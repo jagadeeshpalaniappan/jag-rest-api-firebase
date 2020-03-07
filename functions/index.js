@@ -4,7 +4,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const express = require("express");
 const bodyParser = require("body-parser");
-var cors = require('cors');
+const cors = require('cors');
 
 
 // DB:INIT
@@ -35,14 +35,24 @@ app.options('*', cors());
 const contacts = require('./contacts')(db);
 
 const contactsRouter = express.Router();
-contactsRouter.options('*', cors());
-contactsRouter.get("/contacts", contacts.getAll);   // View all contacts
-contactsRouter.get("/contacts/:id", contacts.get); // View a contact
-contactsRouter.post("/contacts", contacts.create);  // Add new contact
-contactsRouter.patch("/contacts/:id", contacts.update);  // Update existing contact
-contactsRouter.delete("/contacts/:id", contacts.remove);   // Delete a contact
-app.use("/api/v1", contactsRouter);
+// contactsRouter.options('*', cors());
+contactsRouter.get("", contacts.getAll);   // View all contacts
+contactsRouter.get("/:id", contacts.get); // View a contact
+contactsRouter.post("", contacts.create);  // Add new contact
+contactsRouter.patch("/:id", contacts.update);  // Update existing contact
+contactsRouter.delete("/:id", contacts.remove);   // Delete a contact
+app.use("/api/v1/contacts", contactsRouter);
 
+
+const any = require('./any')(db);
+
+const anyRouter = express.Router();
+anyRouter.get("/:collectionId", any.getAll);   // View all contacts
+anyRouter.get("/:collectionId/:id", any.get); // View a contact
+anyRouter.post("/:collectionId", any.create);  // Add new contact
+anyRouter.patch("/:collectionId/:id", any.update);  // Update existing contact
+anyRouter.delete("/:collectionId/:id", any.remove);   // Delete a contact
+app.use("/api/v1/any", anyRouter);
 
 
 

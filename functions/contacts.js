@@ -17,7 +17,7 @@ module.exports = (db) => {
 
         if (dbErr) {
             console.log("failed:: getAll:contact");
-            res.status(500).send('GET: FAILED_TO_GET_RECORDS');
+            res.status(500).send('FAILED_TO_GET_CONTACTS');
         } else {
             console.log("success:: getAll:contact");
             const contacts = Object.keys(doc.contacts).map(id => ({id, ...doc.contacts[id]}));
@@ -35,6 +35,9 @@ module.exports = (db) => {
         const [dbErr, doc] = await hp(firestore.getDocument(db, COLLECTION_NAME, id));
 
         if (dbErr) {
+            console.log("failed:: get:contact");
+            res.status(500).send('FAILED_TO_GET_CONTACTS');
+        } else if(!doc) {
             console.log("failed:: get:contact");
             res.status(404).send('GET: DOC_NOT_FOUND');
         } else {
